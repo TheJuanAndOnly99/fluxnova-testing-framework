@@ -86,11 +86,13 @@ abstract class AbstractQueryMock<M extends AbstractQueryMock<M, Q, R, S>, Q exte
     return get();
   }
 
+  @SuppressWarnings("unused")
   public Q listPage(List<R> result, int min, int max) {
     when(query.listPage(min,max)).thenReturn(result);
     return get();
   }
 
+  @SuppressWarnings("unchecked")
   public M forService(S service) {
     try {
       when(createMethod.invoke(service)).thenReturn(get());
