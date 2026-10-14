@@ -63,13 +63,26 @@ jobs:
           echo ""
           echo "=== Validating against FINOS Category A allowed licenses ==="
 
-          # FINOS Category A approved license patterns ONLY (case-insensitive grep -E patterns)
+          # FINOS Category A approved license patterns (case-insensitive grep -E patterns)
           # Reference: https://community.finos.org/docs/governance/software-projects/license-categories/
           # Category A: Apache-2.0, Apache-1.1, MIT, ISC, BSD-2-Clause, BSD-3-Clause, 0BSD, Unlicense,
           #             Python-2.0, PostgreSQL, BSL-1.0, W3C, WTFPL, Xnet, NCSA, ZPL-2.0, zlib
-          # NOTE: EPL, LGPL, GPL, MPL, CDDL, CC-*, OFL are NOT allowed per FINOS Category A
-          # Dual-licensed dependencies pass if one option is Category A
-          ALLOWED_PATTERN='Apache|MIT|ISC|BSD|0BSD|Unlicense|Python-2|PostgreSQL|BSL-1|Boost Software License|W3C|WTFPL|Xnet|NCSA|ZPL-2|zlib|Public Domain'
+          # EPL (Eclipse Public License) 1.0 and 2.0: Approved by FINOS (Juan)
+          # NOTE: LGPL, GPL, MPL, CDDL, CC-*, OFL are NOT allowed
+          # Dual-licensed dependencies pass if one option is Category A (e.g., EPL/LGPL passes on EPL)
+          ALLOWED_PATTERN='Apache|MIT|ISC|BSD|0BSD|Unlicense|Python-2|PostgreSQL|BSL-1|Boost Software License|W3C|WTFPL|Xnet|NCSA|ZPL-2|zlib|Public Domain|EPL|Eclipse Public License'
+
+          # Per-package exceptions (approved artifacts not matching global allow-list)
+          # Format: "groupId:artifactId" entries, checked against artifact string
+          APPROVED_EXCEPTIONS=(
+            # UPL-1.0: Approved exception for GraalVM JavaScript engine
+            # Copyright (c) 2019, Oracle and/or its affiliates. Licensed under UPL-1.0.
+            "org.graalvm.js:js-scriptengine"
+            # EDL-1.0: Eclipse Distribution License is BSD-3-Clause equivalent
+            # Copyright (c) 2017, 2018 Oracle and/or its affiliates. Licensed under EDL-1.0.
+            # See: https://github.com/jakartaee/jaxb-api
+            "jakarta.xml.bind:jakarta.xml.bind-api"
+          )
 
           FAILED=0
           CHECKED=0
@@ -84,7 +97,22 @@ jobs:
               ARTIFACT="${trimmed#*) }"
               CHECKED=$((CHECKED + 1))
 
-              if ! echo "$LICENSE" | grep -qiE "$ALLOWED_PATTERN"; then
+              # Check if license matches allowed pattern
+              if echo "$LICENSE" | grep -qiE "$ALLOWED_PATTERN"; then
+                continue
+              fi
+
+              # Check per-package exceptions
+              IS_EXCEPTION=false
+              for exception in "${APPROVED_EXCEPTIONS[@]}"; do
+                if [[ "$ARTIFACT" == *"$exception"* ]]; then
+                  IS_EXCEPTION=true
+                  echo "APPROVED EXCEPTION: $LICENSE -> $ARTIFACT"
+                  break
+                fi
+              done
+
+              if [[ "$IS_EXCEPTION" == "false" ]]; then
                 echo "DISALLOWED: $LICENSE -> $ARTIFACT"
                 FAILED=$((FAILED + 1))
               fi
