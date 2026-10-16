@@ -3,6 +3,7 @@ package org.finos.fluxnova.bpm.test.mockito.service;
 import org.finos.fluxnova.bpm.engine.RuntimeService;
 import org.finos.fluxnova.bpm.engine.variable.VariableMap;
 import org.finos.fluxnova.bpm.engine.variable.value.TypedValue;
+import org.mockito.stubbing.OngoingStubbing;
 
 import java.util.Collection;
 import java.util.Map;
@@ -59,7 +60,11 @@ public class RuntimeServiceFluentMock {
   }
 
   public <T extends TypedValue> RuntimeServiceFluentMock getVariableLocalTyped(final String variableName, boolean deserializeValues, final T value, final T... values) {
-    when(runtimeService.getVariableLocalTyped(anyString(), eq(variableName), eq(deserializeValues))).thenReturn(value, values);
+    thenReturnSequentially(
+      when(runtimeService.getVariableLocalTyped(anyString(), eq(variableName), eq(deserializeValues))),
+      value,
+      values
+    );
     return this;
   }
 
@@ -74,7 +79,11 @@ public class RuntimeServiceFluentMock {
   }
 
   public <T extends TypedValue> RuntimeServiceFluentMock getVariableLocalTyped(final String variableName, final T value, final T... values) {
-    when(runtimeService.getVariableLocalTyped(anyString(), eq(variableName))).thenReturn(value, values);
+    thenReturnSequentially(
+      when(runtimeService.getVariableLocalTyped(anyString(), eq(variableName))),
+      value,
+      values
+    );
     return this;
   }
 
@@ -84,7 +93,11 @@ public class RuntimeServiceFluentMock {
   }
 
   public <T extends TypedValue> RuntimeServiceFluentMock getVariableTyped(final String variableName, boolean deserializeValues, final T value, final T... values) {
-    when(runtimeService.getVariableTyped(anyString(), eq(variableName), eq(deserializeValues))).thenReturn(value, values);
+    thenReturnSequentially(
+      when(runtimeService.getVariableTyped(anyString(), eq(variableName), eq(deserializeValues))),
+      value,
+      values
+    );
     return this;
   }
 
@@ -99,7 +112,11 @@ public class RuntimeServiceFluentMock {
   }
 
   public <T extends TypedValue> RuntimeServiceFluentMock getVariableTyped(final String variableName, final T value, final T... values) {
-    when(runtimeService.getVariableTyped(anyString(), eq(variableName))).thenReturn(value, values);
+    thenReturnSequentially(
+      when(runtimeService.getVariableTyped(anyString(), eq(variableName))),
+      value,
+      values
+    );
     return this;
   }
 
@@ -110,5 +127,12 @@ public class RuntimeServiceFluentMock {
 
   public RuntimeService getRuntimeService() {
     return runtimeService;
+  }
+
+  private static <T> void thenReturnSequentially(final OngoingStubbing<T> stubbing, final T value, final T[] values) {
+    OngoingStubbing<T> ongoingStubbing = stubbing.thenReturn(value);
+    for (final T nextValue : values) {
+      ongoingStubbing = ongoingStubbing.thenReturn(nextValue);
+    }
   }
 }

@@ -218,6 +218,7 @@ public class CaseInstanceFake implements CaseInstance {
       '}';
   }
 
+  @SuppressWarnings("unchecked")
   public static AtomicReference<CaseInstanceFake> prepareMock(CaseService caseServiceMock, String caseInstanceId) {
     // create an instance with id
     AtomicReference<CaseInstanceFake> caseInstanceFake = new AtomicReference<>();
